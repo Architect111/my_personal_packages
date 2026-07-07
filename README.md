@@ -7,3 +7,8 @@ uci set quickfile-go.main.listen_addr='0.0.0.0'
 uci set quickfile-go.main.listen_port='8989'
 uci commit quickfile-go
 /etc/init.d/quickfile-go restart
+# vnt
+# 撤销所有上游同步，回到上一次稳定提交
+git reset --hard HEAD^
+# 推送覆盖线上仓库
+git push -f
