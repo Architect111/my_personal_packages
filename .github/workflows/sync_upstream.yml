@@ -1,0 +1,59 @@
+name: 自动同步上游插件
+on:
+  # 每月1号凌晨2点自动执行，满足你一月一次更新需求
+  schedule:
+    - cron: "0 2 1 * *"
+  # 支持手动点按钮随时触发同步
+  workflow_dispatch:
+
+jobs:
+  sync-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 完整拉取仓库所有提交记录
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 设置Git提交身份
+        run: |
+          git config --global user.name "AutoSync Bot"
+          git config --global user.email "bot@github.com"
+
+      - name: 批量同步配置（在这里填你所有插件）
+        run: |
+          # 数组格式：插件目录名=上游仓库地址
+          declare -A plugin_list=(
+            ["luci-app-quickfile-go"]="https://github.com/home16668/luci-app-quickfile-go"
+            ["luci-app-vnt"]="此处替换成VNT的上游git地址"
+          )
+          # 标记是否存在任意插件更新
+          has_update=0
+
+          # 循环逐个同步所有插件
+          for prefix in "${!plugin_list[@]}"; do
+            upstream_url=${plugin_list[$prefix]}
+            echo "===== 开始检测 $prefix 上游更新 ====="
+            # 拉取上游，不自动提交，仅临时合并
+            git subtree pull --prefix=$prefix $upstream_url main --squash --no-commit || true
+
+            # 检测是否产生代码差异
+            if ! git diff --quiet; then
+              echo "$prefix 检测到新版本变更"
+              has_update=1
+            else
+              # 无更新，撤销本次临时合并，恢复原样
+              git reset --hard HEAD
+              echo "$prefix 上游无更新，已撤销操作"
+            fi
+          done
+
+          # 仅当有插件更新时才提交推送
+          if [ $has_update -eq 1 ]; then
+            git add .
+            git commit -m "定时自动同步上游插件新版本"
+            git push
+            echo "已同步更新并推送至远程仓库"
+          else
+            echo "所有插件上游均无新版本，无任何操作，流程结束"
+          fi
