@@ -25,7 +25,7 @@ jobs:
           # 数组格式：插件目录名=上游仓库地址
           declare -A plugin_list=(
             ["luci-app-quickfile-go"]="https://github.com/home16668/luci-app-quickfile-go"
-            ["luci-app-vnt"]="此处替换成VNT的上游git地址"
+            ["luci-app-vnt"]="https://github.com/vnt-dev/vnt|main"
           )
           # 标记是否存在任意插件更新
           has_update=0
